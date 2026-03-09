@@ -66,6 +66,8 @@ import { getCodeImg } from "@/api/login"
 import Cookies from "js-cookie"
 import { encrypt, decrypt } from '@/utils/jsencrypt'
 import defaultSettings from '@/settings'
+import { ssoLogin } from "@/api/login";
+import { setToken } from "@/utils/auth";
 
 export default {
   name: "Login",
@@ -106,11 +108,27 @@ export default {
       immediate: true
     }
   },
-  created() {
-    this.getCode()
-    this.getCookie()
+  async created() {
+    if (this.getTicket()) {
+      const ssoLoginDate = await ssoLogin(this.getTicket());
+        console.log("SSO登录结果：", ssoLoginDate);
+        if (ssoLoginDate.code === 200) {
+          setToken(ssoLoginDate.data);
+          console.log("SSO登录结果：", ssoLoginDate.data);
+          this.$router.push("/index");
+        }
+    }
+      this.getCode()
+      this.getCookie()
   },
   methods: {
+    getTicket() {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get("ticket")) {
+        return urlParams.get("ticket")
+      }
+      return null
+    },
     getCode() {
       getCodeImg().then(res => {
         this.captchaEnabled = res.captchaEnabled === undefined ? true : res.captchaEnabled

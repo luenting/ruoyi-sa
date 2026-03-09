@@ -4,6 +4,8 @@ import java.io.IOException;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import cn.dev33.satoken.stp.StpUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.core.Authentication;
@@ -39,15 +41,32 @@ public class LogoutSuccessHandlerImpl implements LogoutSuccessHandler
     public void onLogoutSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication)
             throws IOException, ServletException
     {
-        LoginUser loginUser = tokenService.getLoginUser(request);
-        if (StringUtils.isNotNull(loginUser))
+//        LoginUser loginUser = tokenService.getLoginUser(request);
+//        if (StringUtils.isNotNull(loginUser))
+//        {
+//            String userName = loginUser.getUsername();
+//            // 删除用户缓存记录
+//            tokenService.delLoginUser(loginUser.getToken());
+//            // 记录用户退出日志
+//            AsyncManager.me().execute(AsyncFactory.recordLogininfor(userName, Constants.LOGOUT, MessageUtils.message("user.logout.success")));
+//        }
+//        ServletUtils.renderString(response, JSON.toJSONString(AjaxResult.success(MessageUtils.message("user.logout.success"))));
+
+        // 1. Sa-Token Pro注销（核心改动）
+//        System.out.println(authentication);
+        StpUtil.logout();
+//        System.out.println("退出了？？？");
+        // 2. 保留若依原有日志/异步处理（可选）
+        LoginUser loginUser = null;
+        if (StringUtils.isNotNull(authentication) && StringUtils.isNotNull(authentication.getPrincipal()))
         {
+            loginUser = (LoginUser) authentication.getPrincipal();
             String userName = loginUser.getUsername();
-            // 删除用户缓存记录
-            tokenService.delLoginUser(loginUser.getToken());
             // 记录用户退出日志
-            AsyncManager.me().execute(AsyncFactory.recordLogininfor(userName, Constants.LOGOUT, MessageUtils.message("user.logout.success")));
+            AsyncManager.me().execute(AsyncFactory.recordLogininfor(userName, Constants.LOGOUT, "退出成功"));
         }
-        ServletUtils.renderString(response, JSON.toJSONString(AjaxResult.success(MessageUtils.message("user.logout.success"))));
+
+        // 3. 保留若依原有返回格式
+        ServletUtils.renderString(response, AjaxResult.success("退出成功").toString());
     }
 }

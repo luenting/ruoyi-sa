@@ -18,6 +18,15 @@ export function login(username, password, code, uuid) {
     data: data
   })
 }
+// sso登录方法
+export function ssoLogin(ticket) {
+  const data = { ticket }
+  return request({
+    url: `/sso/doLoginByTicket?ticket=${ticket}`,
+    method: 'get',
+    data: data
+  })
+}
 
 // 注册方法
 export function register(data) {

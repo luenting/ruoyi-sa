@@ -3,11 +3,15 @@ package com.ruoyi.web.controller.system;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
+
+import cn.dev33.satoken.sso.model.SaCheckTicketResult;
+import cn.dev33.satoken.sso.processor.SaSsoClientProcessor;
+import cn.dev33.satoken.stp.StpUtil;
+import cn.dev33.satoken.stp.parameter.SaLoginParameter;
+import cn.dev33.satoken.util.SaResult;
+import com.ruoyi.common.annotation.Anonymous;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import com.ruoyi.common.constant.Constants;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.domain.entity.SysMenu;
@@ -53,17 +57,60 @@ public class SysLoginController
      * @param loginBody 登录信息
      * @return 结果
      */
+//    @PostMapping("/login")
+//    public AjaxResult login(@RequestBody LoginBody loginBody)
+//    {
+//        AjaxResult ajax = AjaxResult.success();
+//        // 生成令牌
+//        String token = loginService.login(loginBody.getUsername(), loginBody.getPassword(), loginBody.getCode(),
+//                loginBody.getUuid());
+//        ajax.put(Constants.TOKEN, token);
+//        return ajax;
+//    }
+
+    /**
+     * 登录方法
+     *
+     * @param loginBody 登录信息
+     * @return 结果
+     */
     @PostMapping("/login")
     public AjaxResult login(@RequestBody LoginBody loginBody)
     {
         AjaxResult ajax = AjaxResult.success();
         // 生成令牌
-        String token = loginService.login(loginBody.getUsername(), loginBody.getPassword(), loginBody.getCode(),
-                loginBody.getUuid());
+        StpUtil.login(loginBody.getUsername());
+        String token = StpUtil.getTokenValue();
         ajax.put(Constants.TOKEN, token);
         return ajax;
     }
+    @PostMapping("/logout")
+    public AjaxResult logout() {
+        // Pro版注销（自动删除Redis中的Token）
+        StpUtil.logout();
+        return AjaxResult.success("注销成功");
+    }
 
+    // 根据ticket进行登录（前后台分离环境下专用）
+    @Anonymous
+    @RequestMapping("/sso/doLoginByTicket")
+    public SaResult doLoginByTicket(String ticket) {
+        SaCheckTicketResult ctr = SaSsoClientProcessor.instance.checkTicket(ticket);
+//        SaCheckTicketResult ctr = SaSsoClientProcessor.instance.checkTicket(ticket, "/sso/doLoginByTicket");
+        // 如果 ticket 无效 checkTicket 方法会直接抛出异常，所以此处无需判断 ctr.loginId 是否为null，直接登录即可
+        StpUtil.login(ctr.loginId, new SaLoginParameter()
+                .setTimeout(ctr.remainTokenTimeout)
+                .setDeviceId(ctr.deviceId)
+        );
+        return SaResult.data(StpUtil.getTokenValue());
+    }
+    // 根据ticket进行登录（前后台分离环境下专用）
+    @Anonymous
+    @RequestMapping("/sso/logout")
+    public AjaxResult ssoLogout() {
+        StpUtil.logout();
+        return AjaxResult.success("注销成功");
+    }
     /**
      * 获取用户信息
      * 

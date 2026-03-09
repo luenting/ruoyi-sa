@@ -72,7 +72,7 @@ spring:
     # 端口，默认为6379
     port: 6379
     # 数据库索引
-    database: 0
+    database: 2
     # 密码
     password:
     # 连接超时时间
@@ -155,3 +155,20 @@ xss:
   excludes: /system/notice
   # 匹配链接
   urlPatterns: /system/*,/monitor/*,/tool/*
+
+############## Sa-Token 配置 (文档: https://sa-token.cc) ##############
+sa-token:
+  # 是否输出操作日志
+  is-log: true
+  # SSO-相关配置
+  sso-client:
+    # 当前 client 端标识
+    client: ruoyi-test
+    # SSO-Server端地址
+    server-url: http://ssp-server.com:9000
+    # 在 sso-server 端前后端分离时需要单独配置 auth-url 参数（上面的不要注释，auth-url 配置项和 server-url 要同时存在）
+    auth-url: http://localhost/login
+    # 打开模式三
+    is-http: true
+    # 接口调用秘钥
+    secret-key: 123qwe456rty789uio
